@@ -3,31 +3,102 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "process.h"
+#include "linux_parser.h"
 
 using std::string;
 using std::to_string;
 using std::vector;
 
-// TODO: Return this process's ID
-int Process::Pid() { return 0; }
+//---------------------------------------------------------------
+// Return this process's ID
+int Process::Pid() 
+{ 
+    return Pid_;
+}
 
-// TODO: Return this process's CPU utilization
-float Process::CpuUtilization() { return 0; }
+void Process::setPid(int id)
+{
+  Pid_ = id;
+}
 
-// TODO: Return the command that generated this process
-string Process::Command() { return string(); }
+//---------------------------------------------------------------
+// Return this process's CPU utilization
+float Process::CpuUtilization()
+{ 
+    return Cpu_; 
+}
 
-// TODO: Return this process's memory utilization
-string Process::Ram() { return string(); }
+// Set Cpu utilization
+void Process::setCpuUtilization(float cpu)
+{
+    Cpu_ = cpu;
+}
 
-// TODO: Return the user (name) that generated this process
-string Process::User() { return string(); }
+//---------------------------------------------------------------
+// Return the command that generated this process
+string Process::Command()
+{ 
+    return Command_; 
+}
 
-// TODO: Return the age of this process (in seconds)
-long int Process::UpTime() { return 0; }
+void Process::setCommand(const std::string& sCommand)
+{
+    Command_ = sCommand;
+}
 
-// TODO: Overload the "less than" comparison operator for Process objects
-// REMOVE: [[maybe_unused]] once you define the function
-bool Process::operator<(Process const& a[[maybe_unused]]) const { return true; }
+//---------------------------------------------------------------
+// Return this process's memory utilization
+string Process::Ram()
+{ 
+
+    return Ram_; 
+}
+
+void Process::setRam(std::string& ram)
+{
+    Ram_ = ram;
+}
+
+//---------------------------------------------------------------
+// Return the user (name) that generated this process
+string Process::User() 
+{ 
+    return User_; 
+}
+
+void Process::setUser(const std::string& user_name) 
+{ 
+    User_ = user_name;
+}
+
+//---------------------------------------------------------------
+// Return the age of this process (in seconds)
+long int Process::UpTime() 
+{ 
+    return Uptime_; 
+}
+
+void Process::setUptime(long int uptime)
+{
+    Uptime_ = uptime;
+}
+
+//---------------------------------------------------------------
+// Overload the "less than" comparison operator for Process objects
+bool Process::operator<(Process const& a) const 
+{ 
+    if (this->Cpu_ > a.Cpu_)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+    
+}
+
+//---------------------------------------------------------------
