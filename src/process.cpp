@@ -46,7 +46,7 @@ string Process::Command()
 
 void Process::setCommand(const std::string& sCommand)
 {
-    Command_ = sCommand;
+    Command_ = sCommand.substr(0,40) + "...";
 }
 
 //---------------------------------------------------------------
@@ -57,9 +57,9 @@ string Process::Ram()
     return Ram_; 
 }
 
-void Process::setRam(std::string& ram)
+void Process::setRam(const std::string& sRam)
 {
-    Ram_ = ram;
+    Ram_ = sRam;
 }
 
 //---------------------------------------------------------------
@@ -69,9 +69,9 @@ string Process::User()
     return User_; 
 }
 
-void Process::setUser(const std::string& user_name) 
+void Process::setUser(const std::string& sUserName) 
 { 
-    User_ = user_name;
+    User_ = sUserName;
 }
 
 //---------------------------------------------------------------
@@ -90,15 +90,7 @@ void Process::setUptime(long int uptime)
 // Overload the "less than" comparison operator for Process objects
 bool Process::operator<(Process const& a) const 
 { 
-    if (this->Cpu_ > a.Cpu_)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-    
+    return this->Cpu_ > a.Cpu_;
 }
 
 //---------------------------------------------------------------

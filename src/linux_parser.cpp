@@ -14,7 +14,15 @@ using std::to_string;
 using std::vector;
 using std::cout;
 
-namespace fs = std::experimental::filesystem;
+// requires a higher version of g++
+# if __has_include(<filesystem>)
+    #include <filesystem>  
+    namespace fs = std::filesystem;  
+#else
+    // works for virtual machine version ==> requires target_link_libraries(... stdc++fs) in 13:CMakeLists.txt
+    #include <experimental/filesystem>
+    namespace fs = std::experimental::filesystem;
+# endif
 
 //--------------------------------------------------------
 // Return OS string
@@ -79,9 +87,9 @@ vector<int> LinuxParser::Pids()
 // Read and return the system memory utilization
 float LinuxParser::MemoryUtilization()
 { 
-  float mem_total = 0.0f, mem_free = 0.0f;
-  bool mem_totalFound =false;
-  bool mem_freeFound =false;
+  float memTotal = 0.0f, memFree = 0.0f;
+  bool memTotalFound =false;
+  bool memFreeFound =false;
   string line;
   string key;
   string value;
@@ -97,18 +105,18 @@ float LinuxParser::MemoryUtilization()
         // Total memeory
         if (key == "MemTotal:")
         {
-          mem_total = stof(value);
-          mem_totalFound = true;
+          memTotal = stof(value);
+          memTotalFound = true;
         }
         // Free memeory
         else if(key == "MemFree:")
         {
-          mem_free = stof(value);
-          mem_freeFound = true;
+          memFree = stof(value);
+          memFreeFound = true;
         }
 
         // Require data found and exit the loop
-        if(mem_totalFound && mem_freeFound)
+        if(memTotalFound && memFreeFound)
         {
           break;
         }
@@ -117,9 +125,9 @@ float LinuxParser::MemoryUtilization()
   }
   
   // Return the percentage of memory utilization
-  if (mem_freeFound && mem_totalFound)
+  if (memFreeFound && memTotalFound)
   {
-    return (mem_total - mem_free)/ mem_total;
+    return (memTotal - memFree)/ memTotal;
   }
   
   return 0.0f; // not valid
@@ -137,7 +145,8 @@ long LinuxParser::UpTime()
     std::istringstream linestream(line);
     linestream >> uptime;
   }
-  return (std::stol(uptime));
+  
+  return std::stol(uptime);
 }
 
 //--------------------------------------------------------
@@ -154,7 +163,7 @@ long LinuxParser::Jiffies()
 // Read and return the number of active jiffies for a PID
 long LinuxParser::ActiveJiffies(int pid)
 { 
-  long total_jiffies = 0;
+  long totalJiffies = 0;
   string sPid = std::to_string(pid);
   string line;
   string item;
@@ -171,19 +180,19 @@ long LinuxParser::ActiveJiffies(int pid)
       // utime + stime + cutime + cstime
       if ((i == 14) || (i == 15) || (i == 16) || (i == 17))
       {
-        total_jiffies += std::stol(item);;
+        totalJiffies += std::stol(item);;
       }
       i++;
     }
   }
-  return total_jiffies;
+  return totalJiffies;
 }
 
 //--------------------------------------------------------
 // Read and return the number of idle jiffies for the system
 long LinuxParser::StartTimeJiffies(int pid) 
 { 
-  long startTime_jiffies;
+  long startTimeJiffies;
   string sPid = std::to_string(pid);
   string line;
   string item;
@@ -200,14 +209,14 @@ long LinuxParser::StartTimeJiffies(int pid)
       // utime + stime + cutime + cstime
       if (i == 22)
       {
-        startTime_jiffies = std::stol(item);
+        startTimeJiffies = std::stol(item);
         goto end;
       }
       i++;
     }
     end: ;
   }
-  return startTime_jiffies;
+  return startTimeJiffies;
 }
 
 //--------------------------------------------------------
@@ -315,7 +324,7 @@ vector<string> LinuxParser::CpuUtilization()
 // Read and return the total number of processes
 int LinuxParser::TotalProcesses()
 { 
-  int total_processes = 0;
+  int totalProcesses = 0;
   bool found = false;
   string line;
   string key;
@@ -331,7 +340,7 @@ int LinuxParser::TotalProcesses()
         // Total memeory
         if (key == "processes")
         {
-          total_processes = stof(value);
+          totalProcesses = stof(value);
           found = true;
         }
         // Require data found and exit the loop
@@ -346,7 +355,7 @@ int LinuxParser::TotalProcesses()
   // Return the percentage of memory utilization
   if (found)
   {
-    return total_processes;
+    return totalProcesses;
   }
   
   cout << "Total processes are not found \n";
@@ -357,7 +366,7 @@ int LinuxParser::TotalProcesses()
 // Read and return the number of running processes
 int LinuxParser::RunningProcesses()
 { 
-  int running_processes = 0;
+  int runningProcesses = 0;
   bool found = false;
   string line;
   string key;
@@ -373,7 +382,7 @@ int LinuxParser::RunningProcesses()
         // Total memeory
         if (key == "procs_running")
         {
-          running_processes = stof(value);
+          runningProcesses = stof(value);
           found = true;
         }
         // Require data found and exit the loop
@@ -388,7 +397,7 @@ int LinuxParser::RunningProcesses()
   // Return the percentage of memory utilization
   if (found)
   {
-    return running_processes;
+    return runningProcesses;
   }
   
   cout << "Running processes are not found \n";
@@ -400,7 +409,7 @@ int LinuxParser::RunningProcesses()
 string LinuxParser::Command(int pid) 
 { 
   string sPid = std::to_string(pid);
-  string line;
+  string line; // Initialize to empty string
   std::ifstream stream(kProcDirectory + "/" + sPid + kCmdlineFilename);
   if (stream.is_open()) {
     std::getline(stream, line);
@@ -509,9 +518,9 @@ string LinuxParser::User(const int uid)
 
 //--------------------------------------------------------
 // Read and return the uptime of a process
-long LinuxParser::UpTime(int pid) 
+long LinuxParser::processStartTime(int pid) 
 { 
-  long int uptime = 0;
+  long int processStartTime = 0; // Time at process start after boot
   string sPid = std::to_string(pid);
   string line;
   string value;
@@ -525,13 +534,13 @@ long LinuxParser::UpTime(int pid)
         // Total memeory
         if (i == 22)
         {
-          uptime = std::stol(value);
+          processStartTime = std::stol(value);
           break;
         }
         i++;
       }
   }
   
-  return uptime; 
+  return processStartTime; 
 }
 //--------------------------------------------------------

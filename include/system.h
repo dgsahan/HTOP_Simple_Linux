@@ -18,10 +18,9 @@ class System {
   std::string Kernel();               // See src/system.cpp
   std::string OperatingSystem();      // See src/system.cpp
 
-  // Define any necessary private members
  private:
-  Processor cpu_ = {};
-  std::vector<Process> processes_ = {};
+  Processor cpu_ = {}; // System CPU usage
+  std::vector<Process> processes_ = {}; // Running Processes
 };
 
 #endif

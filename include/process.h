@@ -3,8 +3,8 @@
 
 #include <string>
 /*
-Basic class for Process representation
-It contains relevant attributes as shown below
+    Basic class for Process representation
+    It contains relevant attributes as shown below
 */
 class Process {
  public:
@@ -20,7 +20,7 @@ class Process {
   void setPid(int id);
   void setCommand(const std::string& sCommand);
   void setUptime(long int uptime);
-  void setRam(std::string& ram);
+  void setRam(const std::string& ram);
   void setUser(const std::string& user_name);
   void setCpuUtilization(float cpu);
 

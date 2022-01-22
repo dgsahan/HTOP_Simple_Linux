@@ -12,14 +12,16 @@
 #include "linux_parser.h"
 #include "iostream"
 
+using namespace std;
+
 using std::set;
 using std::size_t;
 using std::string;
-using std::vector;
+/*using std::vector;*/
 
+// KB to MB conversion
 #define KB_TO_MB 0.001
 
-//---------------------------------------------------------------
 // Return the system's CPU
 Processor& System::Cpu()
 {
@@ -30,70 +32,72 @@ Processor& System::Cpu()
 // Return a container composed of the system's processes
 vector<Process>& System::Processes()
 { 
-    processes_.clear();
+    processes_.clear(); // Clear the vector at each run
+    
     vector<int> pids = LinuxParser::Pids(); // Get the running process Ids
-
-    if (pids.empty()) // Check for empty vector of Pids
+    if (pids.empty())
     {
-        throw std::invalid_argument("Cannot find a Pid");
+        throw invalid_argument("Cannot find Pids");
     }
 
+    // Loop through all process runing in the system
     for(auto id : pids)
     {
-        Process proc; // Instantiate an empty process object
-        proc.setPid(id); // Set the proces Id
+        Process proc;
 
-        const std::string uid = LinuxParser::Uid(id);
-         if(!std::all_of(uid.begin(), uid.end(), isdigit))
+        // Set the proces Id
+        proc.setPid(id);
+
+        const string uid = LinuxParser::Uid(id);
+        int (*predicate)(int) = isdigit;
+         if(!all_of(uid.begin(), uid.end(), predicate))
          {
-            throw std::invalid_argument("Uid is not a number");
+            throw invalid_argument("Uid is not a number");
          }
 
-        const std::string user = LinuxParser::User(std::stoi(uid)); // Get user name of Pid
+        // Set user of the process
+        const string user = LinuxParser::User(stoi(uid));
         if(user.empty()) 
         {
-            throw std::invalid_argument("User is not found for for the given Uid");
+            throw invalid_argument("User is not found for the given Uid");
             
         }
         proc.setUser(user);
 
-        const std::string command = LinuxParser::Command(id); // Get the process command
-        if(command.empty())
-        {
-            throw std::invalid_argument("Command of the process is not found");
-        }
+        // Set the command of the process
+        const string command = LinuxParser::Command(id);
         proc.setCommand(command);
 
-        long int uptime = LinuxParser::UpTime(id); // Get the process uptime
-        proc.setUptime(uptime/sysconf(_SC_CLK_TCK));
+        // Set the process uptime
+        // Process up time =  System up time - time process started
+        long processUpTime =  LinuxParser::UpTime() - (LinuxParser::processStartTime(id)/sysconf(_SC_CLK_TCK));
+        proc.setUptime(processUpTime);
 
-        std::string ram = LinuxParser::Ram(id); // Get the RAM of the process
-        if(ram.empty())
+        // Set the RAM of the process
+        string ramString = LinuxParser::Ram(id);
+        if(ramString.empty())
         {
-            throw std::invalid_argument("Ram of the Pid is nou found");
+            throw invalid_argument("Ram of the Pid is nou found");
         }
+        long ramLong = KB_TO_MB * stol(ramString);
+        proc.setRam(to_string(ramLong));
         
-        long iRam = std::stol(ram);
-        iRam *= KB_TO_MB;
-        ram = std::to_string(iRam);
-        proc.setRam(ram);
+        // Set process CPU usage
+        float processorStartTime = static_cast<float>(UpTime());
         
-        float cpu_usage;
-        float processor_starttime = (float)UpTime();
+        long totalJiffies = LinuxParser::ActiveJiffies(id); // Get active Process CPU jiffies
+        float totalTime = static_cast<float>(totalJiffies) / static_cast<float>(sysconf(_SC_CLK_TCK));
         
-        long total_jiffies = LinuxParser::ActiveJiffies(id); // Get active Process CPU jiffies
-        float total_time = (float)total_jiffies / (float)sysconf(_SC_CLK_TCK);
-        
-        long start_jiffies = LinuxParser::StartTimeJiffies(id); // Process uptime
-        float start_time = (float)start_jiffies  / (float)sysconf(_SC_CLK_TCK);
+        long startJiffies = LinuxParser::StartTimeJiffies(id); // Process uptime
+        float startTime = static_cast<float>(startJiffies)  /static_cast<float>(sysconf(_SC_CLK_TCK));
 
-        cpu_usage = (total_time / (processor_starttime - start_time) ); // Calculate the process CPU usage
-        proc.setCpuUtilization(cpu_usage);
+        float cpuUsage = (totalTime / (processorStartTime - startTime) ); // Calculate the process CPU usage
+        proc.setCpuUtilization(cpuUsage);
 
         processes_.push_back(proc);
     }
 
-    // Reorder the processes in ascending order based on CPU
+    // Reorder the processes in descending order based on CPU
     const int size =  processes_.size();
     if(size > 0)
     {
@@ -123,7 +127,7 @@ vector<Process>& System::Processes()
             temp[pos[k]] = processes_[k];
         }
 
-        std::reverse(temp.begin(),temp.end());
+        reverse(temp.begin(),temp.end());
         processes_ = temp;
     }
 
@@ -132,9 +136,8 @@ vector<Process>& System::Processes()
 //---------------------------------------------------------------
 
 // Return the system's kernel identifier (string)
-std::string System::Kernel()
+string System::Kernel()
 { 
-    // Return the system kernam identifier
     return LinuxParser::Kernel(); 
 }
 //---------------------------------------------------------------
@@ -147,9 +150,8 @@ float System::MemoryUtilization()
 //---------------------------------------------------------------
 
 // Return the operating system name
-std::string System::OperatingSystem()
+string System::OperatingSystem()
 { 
-    // Return the name of the operating system
     return LinuxParser::OperatingSystem();
 }
 //---------------------------------------------------------------
@@ -173,3 +175,4 @@ long System::UpTime()
 { 
     return LinuxParser::UpTime();
 }
+//---------------------------------------------------------------
