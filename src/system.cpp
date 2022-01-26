@@ -49,19 +49,8 @@ vector<Process>& System::Processes()
         proc.setPid(id);
 
         const string uid = LinuxParser::Uid(id);
-        int (*predicate)(int) = isdigit;
-         if(!all_of(uid.begin(), uid.end(), predicate))
-         {
-            throw invalid_argument("Uid is not a number");
-         }
-
         // Set user of the process
         const string user = LinuxParser::User(stoi(uid));
-        if(user.empty()) 
-        {
-            throw invalid_argument("User is not found for the given Uid");
-            
-        }
         proc.setUser(user);
 
         // Set the command of the process
@@ -75,10 +64,6 @@ vector<Process>& System::Processes()
 
         // Set the RAM of the process
         string ramString = LinuxParser::Ram(id);
-        if(ramString.empty())
-        {
-            throw invalid_argument("Ram of the Pid is nou found");
-        }
         long ramLong = KB_TO_MB * stol(ramString);
         proc.setRam(to_string(ramLong));
         
